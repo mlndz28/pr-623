@@ -1,10 +1,12 @@
+[comment]: <> (#!/usr/bin/pandoc --filter pandoc-plant-uml)
+
 <h2 style="text-align: right"> Fabián Meléndez Aguilar </h2>
 <h2 style="text-align: right" > B34144 </h2> 
 
 Proyecto Final
 ====
 
-## Estructuras de datoss
+## Estructuras de datos
 
 * `Banderas`: Variable tipo word. Contiene las siguientes banderas, empezando por la asignada al bit menos significativo:
     - `TCL_LISTA`: Se activa cuando se suelta una tecla. 
@@ -19,7 +21,7 @@ Proyecto Final
 * `Cont_TCL`: Variable tipo byte. Se refiere a la cantidad de datos ingresados en Num_Array.
 * `Patron`: Variable tipo byte. Se utiliza como índice de filas para barrer la matriz del teclado.
 * `Num_Array`: Dirección del arreglo de bytes de salida. En este se guardan los valores digitados en el teclado.
-* `BRILLO`: Variable tipo byte.
+* `BRILLO`: Variable tipo byte. Indica el brillo del display de 7 segmentos y el arreglo de LEDs.
 * `POT`: Variable tipo byte.
 * `TICK_EN`: Variable tipo word.
 * `TICK_DIS`: Variable tipo word.
@@ -29,27 +31,29 @@ Proyecto Final
 * `TICK_MED`: Variable tipo word. Cantidad de milisegundos desde que se detecta un tubo en el primer sensor. 
 * `BIN1`: Variable tipo byte. Número sin signo. 
 * `BIN2`: Variable tipo byte. Número sin signo.
-* `BCD1`: Variable tipo byte. 
-* `BCD2`: Variable tipo byte. 
+* `BCD1`: Variable tipo byte. Número BCD de dos dígitos.
+* `BCD2`: Variable tipo byte. Número BCD de dos dígitos.
 * `BCD_L`: Variable tipo byte. Número BCD de dos dígitos. 
 * `BCD_H`: Variable tipo byte. Número BCD de dos dígitos.
 * `TEMP`: Variable tipo byte. 
-* `LOW`: Variable tipo byte. 
-* `DISP1`: Variable tipo byte. 
-* `DISP2`: Variable tipo byte. 
-* `DISP3`: Variable tipo byte. 
-* `DISP4`: Variable tipo byte. 
+* `LOW`: Variable tipo byte.
+  
+  De izquierda a derecha: 
+* `DISP1`: Variable tipo byte. Representación del dígito mostrado en la pantalla de 7 segmentos.
+* `DISP2`: Variable tipo byte. Representación del dígito mostrado en la pantalla de 7 segmentos. 
+* `DISP3`: Variable tipo byte. Representación del dígito mostrado en la pantalla de 7 segmentos. 
+* `DISP4`: Variable tipo byte. Representación del dígito mostrado en la pantalla de 7 segmentos. 
 * `LEDS`: Variable tipo byte que contiene el estado de encendido/apagado de los LEDs.
-* `CONT_DIG`: Variable tipo byte. 
+* `CONT_DIG`: Variable tipo byte. Utilizado como indicador del elemento que se está multiplexando en la pantalla de 7 segmentos/LEDs. 
 * `CONT_TICKS`: Variable tipo byte. 
 * `DT`: Variable tipo byte. 
-* `CONT_7SEG`: Variable tipo word. 
-* `Cont_Delay`: Variable tipo byte. 
-* `D2mS`: Constante tipo byte. 
-* `D260uS`: Constante tipo byte. 
-* `D60uS`: Constante tipo byte. 
-* `ADD_L1`: Constante tipo byte. 
-* `ADD_L2`: Constante tipo byte. 
+* `CONT_7SEG`: Variable tipo word. Este contador se utliza para convertir el valor a enviarse al display de 7 segmentos.
+* `Cont_Delay`: Variable tipo byte. Contador utilizado en la interrupción del temporizador por salida por comparador en el canal 4, y se utiliza para mantener un proceso IDLE por cierta cantidad de tiempo. 
+* `D2mS`: Constante tipo byte. Valor asignado a un tiempo de espera de 2 milisegundos. 
+* `D260uS`: Constante tipo byte. Valor asignado a un tiempo de espera de 260 microsegundos.  
+* `D60uS`: Constante tipo byte. Valor asignado a un tiempo de espera de 60 microsegundos.  
+* `ADD_L1`: Constante tipo byte. Primer comando a enviarse cuando se quiere escribir a la memoria de la pantalla LCD. 
+* `ADD_L2`: Constante tipo byte. Segundo comando a enviarse cuando se quiere escribir a la memoria de la pantalla LCD.
 * `Teclas`: Dirección del arreglo de bytes que contiene la asignación de las teclas a los valores deseados.
 * `SEGMENT`: Dirección del arreglo de bytes que contiene la asignación de numeros decimales a valores para la pantalla de 7 segmentos.
 * `iniDsp`: Dirección del arreglo de bytes que contiene la secuencia de comandos para inicializar la pantalla LCD.
