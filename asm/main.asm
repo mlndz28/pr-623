@@ -11,8 +11,7 @@ loop_c`:
 			jsr MODO_CONFIG
 			tst LengthOK
 			beq loop_c`
-loop_m`:	; read mode			
-			brset PTH,$40,select`
+loop_m`:	brset PTH,$40,select`
 			clr VELOC
 			clr LONG
 			bclr PIEH,$09			; disable port H and timer counter interrupts 

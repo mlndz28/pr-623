@@ -61,6 +61,7 @@ ADD_L1:			dc.b $80
 				org $1030
 ADD_L2:			dc.b $C0
 D5mS:			dc.b 250
+POSITION:		ds 1
 				
 				org $1040
 Teclas:			dc.b $01, $02, $03, $04, $05, $06, $07, $08, $09, $0B, $00, $0E 
@@ -85,6 +86,18 @@ MSGMS1_D: 		fcc "   Esperando... "
 				dc.b EOL
 MSGMS2_D: 		fcc "  Calculando... "
 				dc.b EOL
+MSGMSA_U: 		fcc "   VELOCIDAD    "
+				dc.b EOL
+MSGMSA_D: 		fcc " FUERA DE RANGO "
+				dc.b EOL
+MSGMSV_U: 		fcc "   *LONGITUD*   "
+				dc.b EOL
+MSGMSV_D: 		fcc "   *CORRECTA*   "
+				dc.b EOL
+MSGMSNV_U: 		fcc "   -LONGITUD-   "
+				dc.b EOL
+MSGMSNV_D: 		fcc "  -DEFICIENTE-  "
+				dc.b EOL
 MSGS_U:	 		fcc "    SELECTOR    "
 				dc.b EOL
 MSGS_D:	 		fcc "      623       "
@@ -93,6 +106,9 @@ MSGS_D:	 		fcc "      623       "
 STACK:			equ $3BFF
 VMAX:			equ 100
 
+;******************************************************************
+;* Variables that must be initialized on reset.
+;******************************************************************
 INIT:
 		movw #0,Banderas
 		clr LengthOK
@@ -115,4 +131,5 @@ INIT:
 		movw #0,CONT_7SEG
 		clr CONT_200
 		clr Cont_Delay
+		clr POSITION
 		rts

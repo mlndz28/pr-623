@@ -42,8 +42,9 @@ HW_INIT:	movb #$F0, DDRA		; configure first nibble for output and the second one
 			jsr DELAY
 			movb #$28,ATD0CTL3	; 5 conversion cycles
 			movb #$97,ATD0CTL4	; 8 bit resolution, 2 clock cycles per sample, minimum conversion frequency (500 kHz:PRS=23)
-			movb #$83,ATD0CTL5	; right justified result,unsigned, single-channel scan (channel 7)
-			
+
+			bset DDRE,$04		; port E as output for relay
+
 			jsr LCD_INIT								
 			
 			rts

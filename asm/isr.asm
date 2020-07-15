@@ -40,7 +40,8 @@ return`:	bset CRGFLG,$80
 ;* while pth3 reset the TICK_MED counter when on, and calculates
 ;* the length when off:
 ;*   LENGTH[cm] = VELOC[cm/s] * (TICK_MED/1000)[s]   
-;*
+;* Keyboard bounces are removed by using a 10 ms timer, and wrong
+;* key orders with a state machine, using POSITION as a state.
 ;* Enabling convention:
 ;*   org UserPortH
 ;*   dw #CALCULAR
@@ -48,37 +49,50 @@ return`:	bset CRGFLG,$80
 ;*   bclr PPSH,$09
 ;*   cli
 ;*
-;* Changes: VELOC, TICK_MED, LONG, PIFH. 
+;* Changes: VELOC, TICK_MED, LONG, PIFH, POSITION, Banderas, PPSH.
 ;******************************************************************
 CALCULAR:	
 			brclr Cont_Reb,$FF,skip`	; if(Cont_Reb!=0x00) {return;}
 			rti
-skip`:		brset PIFH,$01,pth0`
-			brset PIFH,$08,pth3_on`
-			brclr PIFH,$08,pth3_off`
-			bclr PIFH,$0F
+skip`:		ldaa PIFH
+			brclr POSITION,$FF,s1`
+			brset POSITION,$01,s1_2`
+			brset POSITION,$02,s2`
+			bra reset`
+s1`:		cmpa #$08
+			beq pth3_on`
+			bra reset`
+s1_2`:		cmpa #$01
+			beq pth0`
+			bra reset`
+s2`:		cmpa #$08
+			beq pth3_off`
+			bra reset`
+pressed`:	movb #100,Cont_Reb
 			bra return`
 pth0`:		ldx TICK_MED
 			ldd #50000
+			bset PPSH,$08
+			bclr PIFH,$10
 			idiv
 			exg D,X
 			stab VELOC
-			bclr PIFH,$01
-			bra return`
+			inc POSITION
+			bra pressed`
 pth3_on`:	movw #0,TICK_MED
-			ldaa PIFH
-			swi
-			bclr PIFH,$08
-			bra return`
+			bset Banderas,$01
+			bclr PIFH,$80
+			inc POSITION
+			bra pressed`
 pth3_off`:	ldx TICK_MED
-			swi
 			ldd #1000
 			idiv
 			ldaa VELOC
 			mul 
 			stab LONG
-			bclr PIFH,$08
-
+reset`:		bclr PIFH,$90
+			clr POSITION
+			bclr PPSH,$08
 return`:	rti
 
 
@@ -178,6 +192,10 @@ return`:	ldd TCNT
 ;* Changes: TICK_MED, TICK_EN, TICK_DES, BANDERAS[3], PTP, TC5
 ;******************************************************************
 TCNT_ISR:
+			tst CONT_ROC
+			bne return`
+			bclr PORTE,$04			; deactivate spray
+	
 			ldx TICK_MED
 			inx
 			stx TICK_MED
@@ -193,6 +211,7 @@ skip_e`:	ldx TICK_DIS
 			stx TICK_DIS
 			bra return`
 disable`:	bclr BANDERAS+1,$08		; PANT_FLAG = 0
+			
 return`:	ldd TCNT
 			addd #1000*24/8			; 1000us*24MHz/PRS
 			std TC5
