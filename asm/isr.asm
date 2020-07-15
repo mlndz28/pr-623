@@ -26,7 +26,7 @@ skip_reb`:	brclr CONT_ROC,$FF,skip_roc`
 skip_roc`:	brclr CONT_200,$FF,start_atd`
 			dec CONT_200
 			bra return`
-start_atd`:	; todo: atd0
+start_atd`:	movb #$87,ATD0CTL5
 			movb #200,CONT_200
 return`:	bset CRGFLG,$80
 			rti
@@ -198,4 +198,43 @@ return`:	ldd TCNT
 			std TC5
 			rti
 
+	loc
+;******************************************************************
+;* ATD_ISR - AD converter interrupt service routine for channel 7. 
+;* Called every time it's enabled by writing to ATD0CTL5. Read
+;* from 5 reads of the trimmer input and normalize the value to 
+;* [0,100].
+;*
+;* Enabling convention:
+;*   org UserAtoD0
+;*	 dw #ATD_ISR
+;*   bset ATD0CTL2,$C2
+;*   *wait 100 ms*
+;*   movb #$28,ATD0CTL3
+;*	 movb #$97,ATD0CTL4
+;* 	 cli
+;*
+;* Calling convention:
+;*	 movb #$87,ATD0CTL5
+;*
+;* RETURNS: trimmer value in POT [0,255] and BRILLO [0,100]
+;* Changes: POT, BRILLO.
+;******************************************************************
+ATD_ISR:
+			ldd ADR00H
+			addd ADR01H
+			addd ADR02H
+			addd ADR03H
+			addd ADR04H
+			ldx #5
+			idiv
+			exg D,X
+			stab POT
+			ldaa #100
+			mul
+			ldx #255
+			idiv
+			exg D,X
+			stab BRILLO
+			rti
 

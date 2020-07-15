@@ -60,6 +60,7 @@ Clear_LCD:		dc.b $01
 ADD_L1:			dc.b $80
 				org $1030
 ADD_L2:			dc.b $C0
+D5mS:			dc.b 250
 				
 				org $1040
 Teclas:			dc.b $01, $02, $03, $04, $05, $06, $07, $08, $09, $0B, $00, $0E 

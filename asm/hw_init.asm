@@ -12,6 +12,8 @@
 			dw #OC4_ISR 		; set user routines for timer
 			org UserTimerCh5
 			dw #TCNT_ISR 
+			org UserAtoD0
+			dw #ATD_ISR 
 			
 
 			org $1F00
@@ -30,10 +32,20 @@ HW_INIT:	movb #$F0, DDRA		; configure first nibble for output and the second one
 			bset TSCR2,$03		; set prescaler to 3
 			bset TIOS,$30		; set timer channel 4 and 5 as output 
 			bset TIE,$10 		; enable interruptions for channel 4
-
+			
 			cli
-			jsr LCD_INIT								
 
+			bset ATD0CTL2,$C2	; enable ATD interruptions with automatic flag clearing
+			movb D5mS,Cont_Delay
+			jsr DELAY
+			movb D5mS,Cont_Delay
+			jsr DELAY
+			movb #$28,ATD0CTL3	; 5 conversion cycles
+			movb #$97,ATD0CTL4	; 8 bit resolution, 2 clock cycles per sample, minimum conversion frequency (500 kHz:PRS=23)
+			movb #$83,ATD0CTL5	; right justified result,unsigned, single-channel scan (channel 7)
+			
+			jsr LCD_INIT								
+			
 			rts
 
 LCD_INIT:	
