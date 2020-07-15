@@ -22,7 +22,7 @@ Proyecto Final
 * `Patron`: Variable tipo byte. Se utiliza como índice de filas para barrer la matriz del teclado.
 * `Num_Array`: Dirección del arreglo de bytes de salida. En este se guardan los valores digitados en el teclado.
 * `BRILLO`: Variable tipo byte. Indica el brillo del display de 7 segmentos y el arreglo de LEDs.
-* `POT`: Variable tipo byte.
+* `POT`: Variable tipo byte. Indica la posición del trimmer.
 * `TICK_EN`: Variable tipo word.
 * `TICK_DIS`: Variable tipo word.
 * `CONT_ROC`: Variable tipo byte.
@@ -45,8 +45,8 @@ Proyecto Final
 * `DISP4`: Variable tipo byte. Representación del dígito mostrado en la pantalla de 7 segmentos. 
 * `LEDS`: Variable tipo byte que contiene el estado de encendido/apagado de los LEDs.
 * `CONT_DIG`: Variable tipo byte. Utilizado como indicador del elemento que se está multiplexando en la pantalla de 7 segmentos/LEDs. 
-* `CONT_TICKS`: Variable tipo byte. 
-* `DT`: Variable tipo byte. 
+* `CONT_TICKS`: Variable tipo byte. Debe incrementar en uno cada $20 \mu s$.
+* `DT`: Variable tipo byte. Se utiliza para definir la duración de encendido en la sección de multiplexación de pantallas.
 * `CONT_7SEG`: Variable tipo word. Este contador se utliza para convertir el valor a enviarse al display de 7 segmentos.
 * `Cont_Delay`: Variable tipo byte. Contador utilizado en la interrupción del temporizador por salida por comparador en el canal 4, y se utiliza para mantener un proceso IDLE por cierta cantidad de tiempo. 
 * `D2mS`: Constante tipo byte. Valor asignado a un tiempo de espera de 2 milisegundos. 
@@ -80,6 +80,16 @@ Según los requisitos del programa, la inicialización del HW se debe hacer ante
 
 Para las interrupciones por `output compare` se escoge un valor para el pre-escalador de `8`. Cálculos posteriores se basan en este valor de `PRS`.
 
+Las interrupciones en el convertidor analógico-digital se manejan para el potenciómetro ubicado en el puerto 7 del módulo AD. Se configura para 2 periodos de reloj para el muestreo, una resolución de 8 bits sin signo y 5 conversiones. Se ajusta el valor de frecuencia de operación al valor más bajo posible (500 kHz) con:
+
+$$PRS=\frac{BusClock}{2 \cdot ATDclock}-1 = \frac{24MHz}{2 \cdot 500 kHz}-1=23$$
+
+Entonces: 
+  * `ATD0CTL2` = `$C2`
+  * `ATD0CTL3` = `$28`
+  * `ATD0CTL4` = `$97`
+  * `ATD0CTL5` = `$87`
+
 ```plantuml
 @startuml
 skinparam monochrome true
@@ -100,11 +110,20 @@ CRGINT.7 ← 1
 I ← 0]
 :TSCR1 ← $90
 TSCR2 ← $03
-TIOS ← $0
+TIOS ← $30
 TIE ← $10]
+:ATD0CTL2 ← $C2
+(Cont_Delay) ← (D5ms)]
+:DELAY|
+:(Cont_Delay) ← (D5ms)]
+:DELAY|
+:ATD0CTL3 ← $28
+:ATD0CTL4 ← $97]
 :LCD_INIT|
 :=RETORNAR;
 ```
+La subrutina de inicialización de la pantalla LCD se define de la siguiente manera.
+
 ```plantuml
 @startuml
 skinparam monochrome true
@@ -130,6 +149,8 @@ endwhile (NO)
 
 ## Programa principal
 
+Aquí se asegura que los valores de configuración son ingresados correctamente antes de poder cambiar de modo. Una vez que este requerimiento se satisface, se monitorea iterativamente el estado de los switches que manejan el modo de operación. Antes de entrar a cada modo se habilitan/deshabilitan las interrupciones correspondientes.
+
 ```plantuml
 @startuml
 skinparam monochrome true
@@ -138,6 +159,7 @@ skinparam defaultTextAlignment center
 :=INICIO;
 :SP ← $3BFF]
 :HW_INIT|
+:INIT|
 repeat
   :MODO_CONFIG|    
 repeat while (LengthOK == 0)
@@ -160,6 +182,8 @@ repeat while
 ```
 
 ## MODO_CONFIG
+
+Se carga el mensaje informativo en la pantalla LCD, el valor de LengthOK en el display de 7 segmentos y se enciende el LED correspondiente a este modo. Luego se revisa si alguna tecla ha sido presionada, mediante la subrutina `TAREA_TECLADO`. En caso de que la secuencia haya sido ingresada, una vez validada se guarda en `LengthOK`. En caso de que no haya sido validada exitosamente, se borra el valor ingresado.
 
 ```plantuml
 @startuml
@@ -190,11 +214,13 @@ endif
 
 ## MODO_STOP
 
+En este modo no se hacen mediciones, sólo se muestra un mensaje informativo en la pantalla LCD y se enciende el LED de modo correspondiente.
+
 ```plantuml
 @startuml
 skinparam monochrome true
 skinparam defaultTextAlignment center
-:=MODO_CONFIG;
+:=MODO_STOP;
 :J ← MSGS_U
 K ← MSGS_D]
 :Cargar_LCD|
@@ -228,6 +254,8 @@ endif
 
 ## BCD_BIN
 
+Convierte dos dígitos BCD (en bytes separados) a un valor binario.
+
 ```plantuml
 @startuml
 skinparam monochrome true
@@ -241,6 +269,8 @@ skinparam defaultTextAlignment center
 
 ## RTI_ISR
 
+Subrutina de interrupción para `RTI`. Se decrementan varios contadores. Cada 200ms se activa la interrupción de conversión analógica a digital.
+
 ```plantuml
 @startuml
 skinparam monochrome true
@@ -249,9 +279,16 @@ skinparam defaultTextAlignment center
 :=RTI_ISR;
 if(Cont_Reb =! 0) is (SI) then
   :(Cont_Reb) ← (Cont_Reb) - 1]
-elseif(TIMER_CUENTA != 0) then
+else (NO)
+endif
+if(TIMER_CUENTA != 0) then
   :(TIMER_CUENTA) ← (TIMER_CUENTA) - 1]
 else (NO)
+endif
+if(CONT_200 != 0) then
+  :(CONT_200) ← (CONT_200) - 1]
+else (NO)
+  :ATD0CTL5 ← $87\nCONT_200 ← 200]
 endif
 :CRGFLAG.7 ← 1]
 :=RETORNAR;
@@ -259,6 +296,10 @@ endif
 
 
 ## OC4_ISR
+
+Aca se maneja el refrescamiento de las pantallas multiplexadas, así como la temporización de los retardos en la subrutina `DELAY`.
+
+Para llamar esta subrutina cada $20\mu s$, se configura de la siguiente forma:
 
 $$TC4 = \frac{T_{interrupcion} \cdot BusClk }{PRS}$$
 $$TC4 = \frac{20\mu s \cdot 24MHz}{2^3} = 60$$
@@ -303,7 +344,30 @@ endif
 :=RETORNAR;
 ```
 
+## ATD_ISR
+
+Subrutina llamada cada 200 ms. Se encarga de la conversión analógica a digital de la señal del trimmer ubicada en AD7. Guarda en `POT` el valor del potenciometro con una resolución de 8 bits. Luego normaliza ese valor a 100 y lo guarda en `BRILLO`.
+
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultTextAlignment center
+
+:=ATD_ISR;
+:RR1 ← ADR00H
+RR1 ← (RR1) + ADR01H
+RR1 ← (RR1) + ADR02H
+RR1 ← (RR1) + ADR03H
+RR1 ← (RR1) + ADR04H
+RR1 ← (RR1) / 5
+POT ← (R2)
+BRILLO ← (R2)*100/255]
+:=RETORNAR;
+```
+
 ## CONV_BIN_BCD
+
+Convierte dos numeros sin signo a su representación en BCD con dos dígitos cada uno.
 
 ```plantuml
 @startuml
@@ -322,6 +386,8 @@ endif
 ```
 
 ## BIN_BCD
+
+Convierte un número BCD de dos dígitos a un valor binario mediante el algoritmo XS3.
 
 ```plantuml
 @startuml
@@ -347,6 +413,8 @@ repeat while((J) == 0) is (NO)
 ```
 
 ## BCD_7SEG
+
+Carga en memoria los valores a enviar a la pantalla de 7 segmentos según dígitos guardados como BCD.
 
 ```plantuml
 @startuml
@@ -374,6 +442,8 @@ skinparam defaultTextAlignment center
 ```
 
 ## Cargar_LCD
+
+Carga en la memoria de la pantalla LCD los valores de los caracteres a ser mostrados en el display. La secuencia de comandos y datos enviados es la siguiente:
 
 ```plantuml
 @startuml
@@ -406,6 +476,8 @@ endwhile
 
 ## DELAY
 
+Espera a que el contador `Cont_Delay` llega a cero para salir de la subrutina.
+
 ```plantuml
 @startuml
 skinparam monochrome true
@@ -418,6 +490,8 @@ repeat while(Cont_Delay == 0) is (NO)
 ```
 
 ## Send_Command
+
+Envía un comando a la pantalla LCD a través del puerto K.
 
 ```plantuml
 @startuml
@@ -432,6 +506,8 @@ skinparam defaultTextAlignment center
 
 ## Send_Data
 
+Envía un byte de datos a la pantalla LCD a través del puerto K.
+
 ```plantuml
 @startuml
 skinparam monochrome true
@@ -444,6 +520,8 @@ skinparam defaultTextAlignment center
 ```
 
 ## SEND
+
+Lógica común para `Send_Data` y `Send_Command`.
 
 ```plantuml
 @startuml
@@ -477,6 +555,8 @@ skinparam defaultTextAlignment center
 
 ## TAREA_TECLADO
 
+Maneja la supresión de rebotes en el teclado e implementar la lectura por flanco decreciente.
+
 Se cambia el valor de contador de rebotes a 100 (ms), ya que con 10 aún no se suprimen todos los rebotes (al menos en esta tarjeta).
 
 ```plantuml
@@ -507,6 +587,8 @@ endif
 ```
 ## MUX_TECLADO
 
+Se encarga de leer los valores del «keypad» a través del puerto A y asociarlos a un valor contenido en `Teclas`.
+
 ```plantuml
 @startuml
 skinparam monochrome true
@@ -532,6 +614,8 @@ repeat while((Patron) == 5) is (NO)
 :=RETORNAR;
 ```
 ## FORMAR_ARRAY
+
+Guarda los valores ingresados en el «keypad» a un array, e implementa la funcionalidad de las teclas `B` (borrar) y `E` (enter).
 
 ```plantuml
 @startuml

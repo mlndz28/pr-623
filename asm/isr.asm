@@ -26,7 +26,7 @@ skip_reb`:	brclr CONT_ROC,$FF,skip_roc`
 skip_roc`:	brclr CONT_200,$FF,start_atd`
 			dec CONT_200
 			bra return`
-start_atd`:	movb #$87,ATD0CTL5
+start_atd`:	movb #$87,ATD0CTL5	; right justified result,unsigned, single-channel scan (channel 7)
 			movb #200,CONT_200
 return`:	bset CRGFLG,$80
 			rti
