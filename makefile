@@ -26,8 +26,8 @@ package: render cat
 	@cp asm/whole.asm release/FABIANMELENDEZ_TF.asm
 
 render:
-	@pandoc -o report.pdf report.md --filter pandoc-plantuml
-	@echo Document rendered: $(shell pwd)/rendered.pdf
+	@pandoc report.md report.yaml -s --filter pandoc-plantuml --pdf-engine=xelatex -o report.pdf -f markdown+implicit_figures --variable=fontsize:11pt
+	@echo Document rendered: $(shell pwd)/report.pdf
 
 
 list:

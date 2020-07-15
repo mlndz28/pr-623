@@ -16,7 +16,7 @@ MODO_SELECT:
 			tst LONG
 			bne ctrl`
 init`:		ldx #MSGMS_U
-			brset Banderas,$01,s1`
+			brset Banderas,$01,s1`	; if(S1_PRESSED)...
 			ldy #MSGMS1_D
 			bra skip`
 s1`:		ldy #MSGMS2_D
@@ -33,7 +33,12 @@ return`:	rts
 
 ;******************************************************************
 ;* PANT_CTRL - logic for the information displayed on both screens
-;* and enabling of the relay (for the spray paint gun).
+;* and enabling of the relay (for the spray paint gun). The time 
+;* counters are calculated by the physical geometry of the machine,
+;* and it goes as follows:
+;*   TICK_EN[ms]: (250[cm]-LENGTH/2)*1000/V 
+;*   TICK_DIS[ms]: (250[cm])*1000/V 
+;*   CONT_ROC[ms]: 200 
 ;* 
 ;* Calling convention:
 ;* jsr PANT_CTRL
@@ -49,7 +54,7 @@ PANT_CTRL:
 			cmpa #50
 			bhi v_range
 
-			brclr Banderas+1,$20,t_spray
+			brclr Banderas+1,$20,t_spray ; CALC_TICKS
 			brset Banderas+1,$08,init_l`
 			ldaa BIN1
 			cmpa #$BB
@@ -69,7 +74,6 @@ less`:		ldx #MSGMSNV_U
 load`:		jsr Cargar_LCD
 			bra return`
 
-
 init_l`:	ldaa BIN1
 			cmpa #$BB
 			beq return`
@@ -78,7 +82,7 @@ init_l`:	ldaa BIN1
 v_range:	ldaa BIN1
 			cmpa #$AA
 			bne error`
-			brclr Banderas+1,$08,reset`
+			brclr Banderas+1,$08,reset`	;PANT_FLAG
 			bra return`
 			
 error`:		movb #$AA,BIN1
@@ -119,8 +123,7 @@ t_spray:	clra
 			bset BANDERAS+1,$20		; CALC_TICKS = true
 			bra return`
 
-
-reset`:		bclr Banderas+1,$20	;	CALC_TICKS = false
+reset`:		bclr Banderas+1,$20		; CALC_TICKS = false
 
 			clr VELOC
 			clr LONG

@@ -1,3 +1,4 @@
+
 [comment]: <> (#!/usr/bin/pandoc --filter pandoc-plant-uml)
 
 <h2 style="text-align: right"> Fabián Meléndez Aguilar </h2>
@@ -5,6 +6,20 @@
 
 Proyecto Final
 ====
+
+En este programa se modela un sistema automatizado de medida y etiquetado de tubos, según su medida. Se hace uso de los botones en el puerto H para simular sensores ópticos que determinarán la velocidad a la que viajan tubos, y a partir de esta información obtener su longitud.
+
+Se logran satisfacer los requerimientos del programa, que en resumen son:
+  * Cambio de modos de operación
+  * Ingreso de parámetros de configuración por medio del teclado matricial
+  * Retroalimentación de los procesos a través de las pantallas
+  * Activación del relay
+  * Ajuste de brillo en el display de 7 segmentos utilizando el potenciómetro de la tarjeta de desarrollo
+  * Temporización correcta de procesos
+  * Cálculo de características físicas a partir de dichas temporizaciones
+
+Se realizaron varios `unit tests` y `integration tests` haciendo uso del API en python para D-Bug12 ([https://github.com/mlndz28/d-bug12](https://github.com/mlndz28/d-bug12)), y se pueden encontrar en el repositorio [https://github.com/mlndz28/selector-623](selector-623).
+
 
 ## Estructuras de datos
 
@@ -54,12 +69,14 @@ Proyecto Final
 * `D60uS`: Constante tipo byte. Valor asignado a un tiempo de espera de 60 microsegundos.  
 * `ADD_L1`: Constante tipo byte. Primer comando a enviarse cuando se quiere escribir a la memoria de la pantalla LCD. 
 * `ADD_L2`: Constante tipo byte. Segundo comando a enviarse cuando se quiere escribir a la memoria de la pantalla LCD.
+* `D5mS`: Constante tipo byte. Valor asignado a un tiempo de espera de 5 milisegundos. 
+* `POSITION`: Variable tipo byte. Estado de la medición de un tubo {0,1,2}. 
 * `Teclas`: Dirección del arreglo de bytes que contiene la asignación de las teclas a los valores deseados.
 * `SEGMENT`: Dirección del arreglo de bytes que contiene la asignación de numeros decimales a valores para la pantalla de 7 segmentos.
 * `iniDsp`: Dirección del arreglo de bytes que contiene la secuencia de comandos para inicializar la pantalla LCD.
 * `MSGMC_U,MSGMC_D`: Direcciones de los arreglo de caracteres que contienen los mensajes que se despliegan en el modo `CONFIG` en la pantalla LCD.
 * `MSGS_U,MSGS_D`: Direcciones de los arreglo de caracteres que contienen los mensajes que se despliegan en el modo `STOP` en la pantalla LCD.
-* `MSGMS_U,MSMS1_D,MSMS2_D`: Direcciones de los arreglo de caracteres que contienen los mensajes que se despliegan en el modo `SELECT` en la pantalla LCD.
+* `MSGMS_U,MSGMS1_D,MSGMS2_D,MSGMSNV_U,MSGMSNV_D,MSGMSV_U,MSGMSV_D,MSGMSA_U,MSGMS1A_D`: Direcciones de los arreglo de caracteres que contienen los mensajes que se despliegan en el modo `SELECT` en la pantalla LCD.
 
 ## Inicialización de hardware
 
@@ -90,8 +107,9 @@ Entonces:
   * `ATD0CTL4` = `$97`
   * `ATD0CTL5` = `$87`
 
-```plantuml
+```{ .plantuml style="margin-left: auto; margin-right: auto;"}
 @startuml
+scale max 400 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -121,11 +139,16 @@ TIE ← $10]
 :ATD0CTL4 ← $97]
 :LCD_INIT|
 :=RETORNAR;
+@enduml
 ```
+
+\pagebreak
+
 La subrutina de inicialización de la pantalla LCD se define de la siguiente manera.
 
 ```plantuml
 @startuml
+scale max 400 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -145,6 +168,7 @@ endwhile (NO)
 :DELAY|
 :=RETORNAR;
 
+@enduml
 ```
 
 ## Programa principal
@@ -153,6 +177,7 @@ Aquí se asegura que los valores de configuración son ingresados correctamente 
 
 ```plantuml
 @startuml
+scale max 400 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -179,6 +204,7 @@ repeat
   endif
 repeat while 
 
+@enduml
 ```
 
 ## MODO_CONFIG
@@ -187,6 +213,7 @@ Se carga el mensaje informativo en la pantalla LCD, el valor de LengthOK en el d
 
 ```plantuml
 @startuml
+scale max 400 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 :=MODO_CONFIG;
@@ -210,6 +237,7 @@ if(ARRAY_OK == 1) then
 else (NO)
 endif
 :=RETORNAR;
+@enduml
 ```
 
 ## MODO_STOP
@@ -218,6 +246,7 @@ En este modo no se hacen mediciones, sólo se muestra un mensaje informativo en 
 
 ```plantuml
 @startuml
+scale max 200 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 :=MODO_STOP;
@@ -229,27 +258,94 @@ K ← MSGS_D]
 (LEDS) ← $04]
 :=RETORNAR;
 
+@enduml
 ```
 
 ## MODO_SELECT
 
+En este modo se esperan las mediciones del puerto H, y una vez que se tienen los parámetros físicos, se validan y se enciende el rociador de pintura en la ubicación deseada del tubo por 0.2s (se prende el relay para activar el rociador). 
+
 ```plantuml
 @startuml
+scale max 300 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
-:=MODO_CONFIG;
-:J ← MSGMS_U
-K ← MSGMS1_D]
-:Cargar_LCD|
-:(BIN1) ← $BB
-(BIN2) ← $BB
-(LEDS) ← $02]
-if(VELOC!=0) then
+:=MODO_SELECT;
+if(VELOC != 0 && LONG != 0) then 
   :PANT_CTRL|
 else (NO)
-endif 
+  :J ← MSGMS_U]
+  if(S1_PRESSED == 0) then 
+    :K ← MSGMS1_U]
+  else (NO)
+    :K ← MSGMS2_U]
+  endif
+  :Cargar_LCD|
+  :(BIN1) ← $BB
+  (BIN2) ← $BB
+  (LEDS) ← $02]
+endif
 :=RETORNAR;
 
+@enduml
+```
+
+## PANT_CTRL
+
+Se actualizan los mensajes en la pantalla según los cálculos obtenidos para la velocidad y la longitud del tubo.
+
+La temporización de los mensajes en las pantallas, y del rociador se calculan de la siguiente manera.
+
+* $T_{encender(pantalla)}= 0[ms]$, si la velocidad es incorrecta, ya que se busca cambiar el mensaje en la pantalla de inmediato, y $T_{apagar(pantalla)}= 2000 [ms]$ 
+* $T_{encender(pantalla)}= \frac{250[cm]-\frac{LONG}{2}}{VELOC} \cdot 1000$, de otra forma, para que se encienda a la mitad longitudinal del tubo, y $T_{apagar(pantalla)}= \frac{250[cm]}{VELOC} \cdot 1000$, que es cuando el tubo terminó de pasar por el rociador. El `relay` se enciende por 200 ms.
+
+```plantuml
+@startuml
+scale max 500 height
+skinparam monochrome true
+skinparam defaultTextAlignment center
+:=PANT_CTRL;
+:PIEH.0 ← 0
+PIEH.3 ← 0]
+if( 10 < VELOC < 50) then 
+  if(BIN1 == $AA) then 
+    if(PANT_FLAG == 0) then 
+      :(CALC_TICKS) ← 0\n(VELOC) ← 0\n(LONG) ← 0]
+    else (NO)
+    endif
+    :=RETORNAR;
+    detach
+  else (NO)
+    :(BIN1) ← $AA\n(BIN2) ← $AA\n(TICK_EN) ← 0\n(TICK_DIS) ← 2000\nPANT_FLAG ← 0]
+    :J ← MSGMSA_U\n:K ← MSGMSA_U]
+    :Cargar_LCD|
+  endif
+else (NO)
+  if(CALC_TICKS == 0) then
+    :(TICK_EN) ← 250-(LONG)/2\n(TICK_EN) ← (TICK_EN)/(VELOC)*1000\n(TICK_DIS) ← 250/(VELOC)*1000]  
+    :CALC_TICKS ← 1]  
+  else (NO)
+    if(PANT_FLAG == 1) then
+      if(BIN1 == $BB) then
+        :(CALC_TICKS) ← 0\n(VELOC) ← 0\n(LONG) ← 0]
+      else (NO)
+      endif
+    else (NO)
+      if(BIN1 != $BB) then
+        :(BIN1) ← (LONG)\n(BIN2) ← (VELOC)\n(LONG) ← 0]
+        if(LONG < LengthOK) then
+          :J ← MSGMSNV_U\n:K ← MSGMSNV_U]
+        else (NO)
+          :J ← MSGMSV_U\n:K ← MSGMSV_U\nPORTE.2 ← 1\n(CONT_ROC) ← 200]
+        endif
+        :Cargar_LCD|
+      endif
+    endif
+  endif
+endif
+:=RETORNAR;
+
+@enduml
 ```
 
 ## BCD_BIN
@@ -258,6 +354,7 @@ Convierte dos dígitos BCD (en bytes separados) a un valor binario.
 
 ```plantuml
 @startuml
+scale max 100 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 :=BCD_BIN;
@@ -265,6 +362,7 @@ skinparam defaultTextAlignment center
 
 :=RETORNAR;
 
+@enduml
 ```
 
 ## RTI_ISR
@@ -273,6 +371,7 @@ Subrutina de interrupción para `RTI`. Se decrementan varios contadores. Cada 20
 
 ```plantuml
 @startuml
+scale max 400 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -292,8 +391,8 @@ else (NO)
 endif
 :CRGFLAG.7 ← 1]
 :=RETORNAR;
+@enduml
 ```
-
 
 ## OC4_ISR
 
@@ -308,6 +407,7 @@ Además, CONT_DIG se utliza como una máscara, y no como un contador, por eso se
 
 ```plantuml
 @startuml
+scale max 500 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -323,16 +423,16 @@ else (NO)
 endif
 if((CONT_DIG) == $01) then
   -> SI;
-  :(PORTB) ← (DISP1)
+  :(PORTB) ← (DISP1)]
 elseif((CONT_DIG) == $02) then
   -> SI;
-  :(PORTB) ← (DISP2)
+  :(PORTB) ← (DISP2)]
 elseif((CONT_DIG) == $04) then
   -> SI;
-  :(PORTB) ← (DISP3)
+  :(PORTB) ← (DISP3)]
 elseif((CONT_DIG) == $08) then
   -> SI;
-  :(PORTB) ← (DISP1)
+  :(PORTB) ← (DISP1)]
 else (NO)
   :(PORTB) ← (LEDS);
   :(CONT_DIG) ← $01;
@@ -342,6 +442,7 @@ endif
 
 :TC5 ← (TCNT) + 60]
 :=RETORNAR;
+@enduml
 ```
 
 ## ATD_ISR
@@ -352,6 +453,7 @@ Subrutina llamada cada 200 ms. Se encarga de la conversión analógica a digital
 @startuml
 skinparam monochrome true
 skinparam defaultTextAlignment center
+scale max 200 height
 
 :=ATD_ISR;
 :RR1 ← ADR00H
@@ -363,6 +465,7 @@ RR1 ← (RR1) / 5
 POT ← (R2)
 BRILLO ← (R2)*100/255]
 :=RETORNAR;
+@enduml
 ```
 
 ## CONV_BIN_BCD
@@ -371,6 +474,7 @@ Convierte dos numeros sin signo a su representación en BCD con dos dígitos cad
 
 ```plantuml
 @startuml
+scale max 300 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 :=CONV_BIN_BCD;
@@ -383,6 +487,7 @@ endif
 :BIN_BCD|
 :(BCD2) ← (R1)]
 :=RETORNAR;
+@enduml
 ```
 
 ## BIN_BCD
@@ -391,6 +496,7 @@ Convierte un número BCD de dos dígitos a un valor binario mediante el algoritm
 
 ```plantuml
 @startuml
+scale max 500 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 :=BCD_BIN;
@@ -410,6 +516,7 @@ repeat
 repeat while((J) == 0) is (NO)
 :RR1↓]
 :=RETORNAR;
+@enduml
 ```
 
 ## BCD_7SEG
@@ -418,6 +525,7 @@ Carga en memoria los valores a enviar a la pantalla de 7 segmentos según dígit
 
 ```plantuml
 @startuml
+scale max 400 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 :=BCD_7SEG;
@@ -439,6 +547,7 @@ skinparam defaultTextAlignment center
 0 → R1 → C]
 :(DISP1) ← ((J) + (R1))]
 :=RETORNAR;
+@enduml
 ```
 
 ## Cargar_LCD
@@ -451,6 +560,7 @@ skinparam monochrome true
 skinparam defaultTextAlignment center
 
 :=Cargar_LCD;
+scale max 600 height
 :R1 ← (ADD_L1)]
 :Send_Command|
 :(Cont_Delay) ← (D60uS)]
@@ -472,6 +582,7 @@ while(((K)+1)==0) is (NO)
   :Delay|
 endwhile
 :=RETORNAR;
+@enduml
 ```
 
 ## DELAY
@@ -480,6 +591,7 @@ Espera a que el contador `Cont_Delay` llega a cero para salir de la subrutina.
 
 ```plantuml
 @startuml
+scale max 150 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -487,6 +599,7 @@ skinparam defaultTextAlignment center
 repeat
 repeat while(Cont_Delay == 0) is (NO)
 :=RETORNAR;
+@enduml
 ```
 
 ## Send_Command
@@ -495,6 +608,7 @@ Envía un comando a la pantalla LCD a través del puerto K.
 
 ```plantuml
 @startuml
+scale max 150 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -502,6 +616,7 @@ skinparam defaultTextAlignment center
 :C ← 0]
 :SEND|
 :=RETORNAR;
+@enduml
 ```
 
 ## Send_Data
@@ -510,6 +625,7 @@ Envía un byte de datos a la pantalla LCD a través del puerto K.
 
 ```plantuml
 @startuml
+scale max 150 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -517,6 +633,7 @@ skinparam defaultTextAlignment center
 :C ← 1]
 :SEND|
 :=RETORNAR;
+@enduml
 ```
 
 ## SEND
@@ -525,6 +642,7 @@ Lógica común para `Send_Data` y `Send_Command`.
 
 ```plantuml
 @startuml
+scale max 400 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -538,11 +656,12 @@ endif
 :R1↓\nR1 ← (R1) && $0F\nC ← R1 ← 0\nCCR↓\nC ← R1 ← C]
 :SEND_NIBB|
 :=RETORNAR;
+@enduml
 ```
-
 
 ```plantuml
 @startuml
+scale max 200 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -551,6 +670,7 @@ skinparam defaultTextAlignment center
 :DELAY|
 :PORTK.1 ← 0]
 :=RETORNAR;
+@enduml
 ```
 
 ## TAREA_TECLADO
@@ -561,6 +681,7 @@ Se cambia el valor de contador de rebotes a 100 (ms), ya que con 10 aún no se s
 
 ```plantuml
 @startuml
+scale max 400 height
 skinparam monochrome true
 
 :=TAREA_TECLADO;
@@ -584,13 +705,16 @@ if(Cont_Reb == 0) then
 else(NO)
 endif
 :=RETORNAR;
+@enduml
 ```
+
 ## MUX_TECLADO
 
 Se encarga de leer los valores del «keypad» a través del puerto A y asociarlos a un valor contenido en `Teclas`.
 
 ```plantuml
 @startuml
+scale max 600 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -612,13 +736,16 @@ repeat
 repeat while((Patron) == 5) is (NO)
 :(Tecla) ← $FF]
 :=RETORNAR;
+@enduml
 ```
+
 ## FORMAR_ARRAY
 
 Guarda los valores ingresados en el «keypad» a un array, e implementa la funcionalidad de las teclas `B` (borrar) y `E` (enter).
 
 ```plantuml
 @startuml
+scale max 300 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
@@ -635,5 +762,16 @@ else
   :J ← Num_Array\n((J) + (Cont_TCL)) ← (Tecla_IN)\n(Cont_TCL) ← (Cont_TCL) + 1]
 endif
 :=RETORNAR;
+@enduml
 ```
 
+## Conclusiones, comentarios y recomendaciones
+
+El trabajo, aunque rico en conceptos de arquitecturas de computadoras, es difícil en cuanto se entiende el funcionamiento específico de este modelo de microprocesador. Se recomienda hacer scripts que ayuden a la modularización del programa (`makefile` es una herramienta muy útil). La implementación de pruebas automatizadas, así como el uso de un CLI para el proceso de debugging es casi obligatorio para evitar el exceso de desgaste con las repeticiones mecánicas e innecesarias de las herramientas disponibles.
+
+## Bibliografía
+
+* Freescale. (2006). CPU 12 Reference Manual. Rev. 4.0. Arizona: Freescale Semiconductor.
+* Freescale. (2005). ATD_10B8C Block User Guide. Rev. 2.11. Arizona: Freescale Semiconductor.
+* Huang, H.W. (2009). The HCS12 / 9S12: An Introduction to Software and Hardware Interfacing.  Cengage Learning.
+* Almy, T. (2009). Designing with Microcontrollers – The 68HCS12.

@@ -3,13 +3,14 @@
 ;********************************************************************************************
 ;* Author: Fabian Melendez
 ;*
-;* Description: PVC pipes length verifier
+;* Description: PVC pipes length verifier and tagger.
 ;*
 ;* Include Files: registers.inc
 ;*
 ;* Assembler: Karl Lunt - as12 (v1.2h, Linux port taken from 
 ;* https://github.com/mlndz28/68hc12-linux)
 ;*
+;* Revision History: https://github.com/mlndz28/selector-623
 ********************************************************************************************
 
 

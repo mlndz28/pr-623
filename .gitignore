@@ -4,3 +4,5 @@ release
 *.properties
 *.pdf
 *.zip
+plantuml-images
+*.jar
