@@ -19,7 +19,7 @@ HW_INIT:	movb #$F0, DDRA		; configure first nibble for output and the second one
 			bset PUCR,$01       ; port A is set for pull up operation 
 			bset DDRB,$FF		; configure port B for output
 			bset DDRJ,$02		; configure PJ1 pin for output
-			bclr DDRP,$0F		; configure port P for output (7 seg display mux)
+			movb $F0,DDRP		; configure port P for output (7 seg display mux)
 			bset PTP,$0F
 			bclr PIEH,$09		; disable interrupts on port H (initially)
 			bclr PPSH,$09		; set polarity to use falling edge

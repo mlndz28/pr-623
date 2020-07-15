@@ -121,15 +121,14 @@ skip_d`:	inc CONT_TICKS			; CONT_TICKS++
 skip_t`:	tst Cont_Delay
 			beq skip_del`
 			dec Cont_Delay
-skip_del`:	
-			cmpa BRILLO
+skip_del`:	cmpa BRILLO
 			beq set_off`
 			cmpa #0
 			beq set_on`
 			bra return`
 set_off`:	bset PTJ,$02			; disable leds
-			bset PTP,$FF			; disable 7seg
-			bset DDRP,$FF			; disable 7seg
+			bset PTP,$0F			; disable 7seg
+			bset DDRP,$0F			; disable 7seg
 			bra return`
 set_on`:	brset CONT_DIG,$01,set_seg0	
 			brset CONT_DIG,$02,set_seg1
@@ -146,15 +145,12 @@ set_seg3:	movb DISP4,PORTB
 mux_p:		ldaa CONT_DIG
 			coma
 			staa PTP				; enable 7seg separately
-			staa DDRP
 			bra return`
-set_leds`:	
-			ldaa LEDS
+set_leds`:	ldaa LEDS
 			movb LEDS,PORTB
 			bclr PTJ,$02			; enable leds to light
 			movb #1,CONT_DIG		; reset counters
 			clr CONT_TICKS
-
 return`:	ldd TCNT
 			addd #20*24/8			; 20us*24MHz/PRS
 			std TC4

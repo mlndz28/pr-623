@@ -9,7 +9,6 @@
 ;* Calling convention:
 ;*   movb <20us multiplier>,Cont_Delay
 ;*   jsr DELAY
-;*
 ;******************************************************************
 DELAY:	
 		tst Cont_Delay
