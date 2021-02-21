@@ -8,6 +8,10 @@
 			dw #RTI_ISR  		; set user routine for RTI interruptions
 			org UserPortH
 			dw #CALCULAR 		; set user routine for port H interruptions
+
+			org UserTimerCh3
+			dw #OC3_ISR 		
+			
 			org UserTimerCh4
 			dw #OC4_ISR 		; set user routines for timer
 			org UserTimerCh5
@@ -30,8 +34,8 @@ HW_INIT:	movb #$F0, DDRA		; configure first nibble for output and the second one
 			bset CRGINT,$80		; enable rti
 			bset TSCR1,$90		; enable the timer module
 			bset TSCR2,$03		; set prescaler to 3
-			bset TIOS,$30		; set timer channel 4 and 5 as output 
-			bset TIE,$10 		; enable interruptions for channel 4
+			bset TIOS,$38		; set timer channel 4 and 5 as output 
+			bset TIE,$18 		; enable interruptions for channel 4
 			
 			cli
 

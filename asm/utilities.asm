@@ -162,5 +162,5 @@ BCD_BIN:
 		ldab #10
 		mul
 		addb 1,SP+
-		stab ValorLength
+		stab ValorVueltas
 		rts 

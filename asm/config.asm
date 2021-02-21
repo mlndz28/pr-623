@@ -13,25 +13,32 @@
 ;* Changes: X, Y, BIN1, BIN2, TICK_EN, TICK_DIS, Banderas
 ;******************************************************************
 MODO_CONFIG:
-			bclr Banderas+1,$04
-			movw #0,TICK_EN
-			movw #0,TICK_DIS
+
+			brset POSITION,$02,skip_load`
+			movb #$02,POSITION
+			movb #$02,LEDS
 			ldx #MSGMC_U
 			ldy #MSGMC_D
 			jsr Cargar_LCD
-			movb LengthOK,BIN1
+			movb NumVueltas,BIN1
 			movb #$BB,BIN2
-			movb #$01,LEDS
+
+
+skip_load`:	bclr Banderas,$04 ; ARRAY_OK = 0
+			movw #0,TICK_EN
+			movw #0,TICK_DIS
 			jsr TAREA_TECLADO
-			brclr Banderas+1,$04,return`	; if(!ARRAY_OK){ return }
+			brclr Banderas,$04,return`	; if(!ARRAY_OK){ return }
+			; swi
 			jsr BCD_BIN
-			ldaa ValorLength
-			cmpa #70
-			bls return`
-			cmpa #100
-			bhs return`
-			movb ValorLength,LengthOK		
+			ldaa ValorVueltas
+			cmpa #5
+			blo return`
+			cmpa #25
+			bhi return`
+			movb ValorVueltas,NumVueltas		
+			movb NumVueltas,BIN1
 			bra return`
-return`:	clr ValorLength
+return`:	clr ValorVueltas
 			; reset keypad data structures
 			rts
