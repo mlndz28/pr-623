@@ -9,20 +9,24 @@
 	loc
 loop_c`:	
 			jsr MODO_CONFIG
-			tst LengthOK
+			tst NumVueltas
 			beq loop_c`
-loop_m`:	brset PTH,$40,select`
-			clr VELOC
-			clr LONG
-			bclr PIEH,$09			; disable port H and timer counter interrupts 
+loop_m`:	
+			brset PTH,$C0,race`
+			bclr PIEH,$09
+			brset PTH,$80,overview`
 			bclr TIE,$20
-			brset PTH,$80,config`
-stop`:		jsr MODO_STOP
+			clr Veloc
+			clr Vueltas
+			clr VelProm 
+			brset PTH,$40,config`
+idle`:		jsr MODO_LIBRE
 			bra loop_m`
-select`:	
-			bset PIEH,$09
+race`:		bset PIEH,$09
 			bset TIE,$20
-			jsr MODO_SELECT
+			jsr MODO_COMPETENCIA
+			bra loop_m`
+overview`:	jsr MODO_RESUMEN
 			bra loop_m`
 config`:	jsr MODO_CONFIG
 			bra loop_m`
