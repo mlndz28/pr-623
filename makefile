@@ -1,6 +1,6 @@
 tests = $(wildcard asm/tests/*.asm)
 tests := $(subst asm/tests/,,$(tests:.asm=))
-parts = init hw_init main config stop select keypad lcd isr utilities
+parts = init hw_init main config idle overview race keypad lcd isr utilities
 AS12A = as12
 AS12FLAGS =-L -s
 BIN = asm/bin
@@ -42,9 +42,10 @@ cat:
 
 main: pre cat
 	@echo Assembling main program
-	@$(AS12A) asm/whole.asm -o$(BIN)/whole.s19 $(AS12FLAGS)
-	@mv asm/whole.lst $(BIN)
-	@mv asm/whole.sym $(BIN)
+	#@$(AS12A) asm/whole.asm -o$(BIN)/whole.s19 $(AS12FLAGS)
+	@$(AS12A) $(foreach f,$(parts),asm/$(f).asm) -o$(BIN)/whole.s19 $(AS12FLAGS)
+	@mv asm/$(word 1,$(parts)).lst $(BIN)/whole.lst
+	@mv asm/$(word 1,$(parts)).sym $(BIN)/whole.sym
 	@dbug12 load $(BIN)/whole.s19
 	@dbug12 run 2000
 
