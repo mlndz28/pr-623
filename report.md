@@ -7,18 +7,17 @@
 Proyecto Final
 ====
 
-En este programa se modela un sistema automatizado de medida y etiquetado de tubos, según su medida. Se hace uso de los botones en el puerto H para simular sensores ópticos que determinarán la velocidad a la que viajan tubos, y a partir de esta información obtener su longitud.
-
+Se desea diseñar e implementar un sistema para el despliegue de información en un
+velódromo. El sistema, denominado RunMeter 623, cuenta con dos sensores foto reflectivos de presencia, una pantalla de 4 dígitos de 7 segmentos y una pantalla LCD 2 x16, como se muestra en la Figura #1. En esta figura se puede observar que el sistema dispone de dos sensores fotoreflectivos de presencia para detectar las bicicletas, separados 55 metros entre sí y de una pantalla, localizada a 300 metros del sensor S2, para presentar la velocidad de la bicicleta calculada en Km/h y el número de vueltas recorridas.
 Se logran satisfacer los requerimientos del programa, que en resumen son:
   * Cambio de modos de operación
   * Ingreso de parámetros de configuración por medio del teclado matricial
   * Retroalimentación de los procesos a través de las pantallas
-  * Activación del relay
   * Ajuste de brillo en el display de 7 segmentos utilizando el potenciómetro de la tarjeta de desarrollo
   * Temporización correcta de procesos
   * Cálculo de características físicas a partir de dichas temporizaciones
 
-Se realizaron varios `unit tests` y `integration tests` haciendo uso del API en python para D-Bug12 ([https://github.com/mlndz28/d-bug12](https://github.com/mlndz28/d-bug12)), y se pueden encontrar en el repositorio [https://github.com/mlndz28/selector-623](selector-623).
+Se realizaron varios `unit tests` y `integration tests` haciendo uso del API en python para D-Bug12 ([https://github.com/mlndz28/d-bug12](https://github.com/mlndz28/d-bug12)).
 
 
 ## Estructuras de datos
@@ -27,7 +26,7 @@ Se realizaron varios `unit tests` y `integration tests` haciendo uso del API en 
     - `TCL_LISTA`: Se activa cuando se suelta una tecla. 
     - `TCL_LEIDA`: Se activa cuando se presiona una tecla. 
     - `ARRAY_OK`: Se activa cuando la secuencia de datos se ingresó correctamente. 
-    - `PANT_FLAG`: Indica si las pantallas se deben refrescar en MODO_SELECT. 
+    - `PANT_FLAG`: Indica si las pantallas se deben refrescar en MODO_COMPETENCIA. 
     - `CALC_TICKS`: Se enciende una vez que el tubo supera el rociador. 
 * `MAX_TCL`: Constante tipo byte que determina el tamaño máximo de Num_Array.
 * `Tecla`: Variable tipo byte que que guarda temporalmente el valor presionado por una tecla.
@@ -41,8 +40,7 @@ Se realizaron varios `unit tests` y `integration tests` haciendo uso del API en 
 * `TICK_EN`: Variable tipo word.
 * `TICK_DIS`: Variable tipo word.
 * `CONT_ROC`: Variable tipo byte.
-* `VELOC`: Variable tipo byte. Indica la velocidad con la que viaja el tubo por la cinta transportadora (dado en $\frac{cm}{s}$). 
-* `LONG`: Variable tipo byte. Indica la longitud del tubo (dado en $cm$). 
+* `VELOC`: Variable tipo byte. Indica la velocidad con la que viaja el ciclista (dado en $\frac{km}{h}$). 
 * `TICK_MED`: Variable tipo word. Cantidad de milisegundos desde que se detecta un tubo en el primer sensor. 
 * `BIN1`: Variable tipo byte. Número sin signo. 
 * `BIN2`: Variable tipo byte. Número sin signo.
@@ -70,7 +68,7 @@ Se realizaron varios `unit tests` y `integration tests` haciendo uso del API en 
 * `ADD_L1`: Constante tipo byte. Primer comando a enviarse cuando se quiere escribir a la memoria de la pantalla LCD. 
 * `ADD_L2`: Constante tipo byte. Segundo comando a enviarse cuando se quiere escribir a la memoria de la pantalla LCD.
 * `D5mS`: Constante tipo byte. Valor asignado a un tiempo de espera de 5 milisegundos. 
-* `POSITION`: Variable tipo byte. Estado de la medición de un tubo {0,1,2}. 
+* `POSITION`: Variable tipo byte. Cache de la posicion anterior de la tarjeta. 
 * `Teclas`: Dirección del arreglo de bytes que contiene la asignación de las teclas a los valores deseados.
 * `SEGMENT`: Dirección del arreglo de bytes que contiene la asignación de numeros decimales a valores para la pantalla de 7 segmentos.
 * `iniDsp`: Dirección del arreglo de bytes que contiene la secuencia de comandos para inicializar la pantalla LCD.
@@ -107,7 +105,7 @@ Entonces:
   * `ATD0CTL4` = `$97`
   * `ATD0CTL5` = `$87`
 
-```{ .plantuml style="margin-left: auto; margin-right: auto;"}
+```plantuml
 @startuml
 scale max 400 height
 skinparam monochrome true
@@ -192,13 +190,13 @@ repeat while (LengthOK == 0)
 repeat
   if(PTH.6==1)
     :PIEH.0 ← 1\nPIEH.3 ← 1\nTIE.5 ← 1]
-    :MODO_SELECT|    
+    :MODO_COMPETENCIA|    
   else (NO)
-    :PIEH.0 ← 1\nPIEH.3 ← 0\nTIE.5 ← 0\nVELOC ← 0\nLONG ← 0]
+    :PIEH.0 ← 1\nPIEH.3 ← 0\nTIE.5 ← 0\nVeloc ← 0]
     if(PTH.7==1)
       :MODO_CONFIG|    
     else (NO)
-      :MODO_STOP|    
+      :MODO_LIBRE|    
     endif
 
   endif
@@ -209,7 +207,7 @@ repeat while
 
 ## MODO_CONFIG
 
-Se carga el mensaje informativo en la pantalla LCD, el valor de LengthOK en el display de 7 segmentos y se enciende el LED correspondiente a este modo. Luego se revisa si alguna tecla ha sido presionada, mediante la subrutina `TAREA_TECLADO`. En caso de que la secuencia haya sido ingresada, una vez validada se guarda en `LengthOK`. En caso de que no haya sido validada exitosamente, se borra el valor ingresado.
+Se carga el mensaje informativo en la pantalla LCD, el valor de LengthOK en el display de 7 segmentos y se enciende el LED correspondiente a este modo. Luego se revisa si alguna tecla ha sido presionada, mediante la subrutina `TAREA_TECLADO`. En caso de que la secuencia haya sido ingresada, una vez validada se guarda en `NumVueltas`. En caso de que no haya sido validada exitosamente, se borra el valor ingresado.
 
 ```plantuml
 @startuml
@@ -229,10 +227,10 @@ K ← MSGMC_D]
 :TAREA_TECLADO|
 if(ARRAY_OK == 1) then
   :BCD_BIN|
-  if((ValorLength) > 70 && (ValorLength) < 100) then
-    :(LengthOK) ← (BIN1)]
+  if((NumVueltas) > 05 && (NumVueltas) < 25) then
+    :(NumVueltas) ← (BIN1)]
   else (NO)
-      :(LengthOK) ← 0]
+      :(NumVueltas) ← 0]
   endif
 else (NO)
 endif
@@ -240,7 +238,7 @@ endif
 @enduml
 ```
 
-## MODO_STOP
+## MODO_LIBRE
 
 En este modo no se hacen mediciones, sólo se muestra un mensaje informativo en la pantalla LCD y se enciende el LED de modo correspondiente.
 
@@ -261,16 +259,16 @@ K ← MSGS_D]
 @enduml
 ```
 
-## MODO_SELECT
+## MODO_COMPETENCIA
 
-En este modo se esperan las mediciones del puerto H, y una vez que se tienen los parámetros físicos, se validan y se enciende el rociador de pintura en la ubicación deseada del tubo por 0.2s (se prende el relay para activar el rociador). 
+En este modo se esperan las mediciones del puerto H, y una vez que se tienen los parámetros físicos, se validan y se calculan otras medidads compuestas. 
 
 ```plantuml
 @startuml
 scale max 300 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
-:=MODO_SELECT;
+:=MODO_COMPETENCIA;
 if(VELOC != 0 && LONG != 0) then 
   :PANT_CTRL|
 else (NO)
@@ -296,8 +294,8 @@ Se actualizan los mensajes en la pantalla según los cálculos obtenidos para la
 
 La temporización de los mensajes en las pantallas, y del rociador se calculan de la siguiente manera.
 
-* $T_{encender(pantalla)}= 0[ms]$, si la velocidad es incorrecta, ya que se busca cambiar el mensaje en la pantalla de inmediato, y $T_{apagar(pantalla)}= 2000 [ms]$ 
-* $T_{encender(pantalla)}= \frac{250[cm]-\frac{LONG}{2}}{VELOC} \cdot 1000$, de otra forma, para que se encienda a la mitad longitudinal del tubo, y $T_{apagar(pantalla)}= \frac{250[cm]}{VELOC} \cdot 1000$, que es cuando el tubo terminó de pasar por el rociador. El `relay` se enciende por 200 ms.
+* $T_{encender(pantalla)}= 0[ms]$, si la velocidad es incorrecta, ya que se busca cambiar el mensaje en la pantalla de inmediato, y $T_{apagar(pantalla)}= 3000 [ms]$ 
+* $T_{encender(pantalla)}= \frac{255[m]}{Veloc} \cdot 1000$, de otra forma, para que se encienda 100 metros antes de la pantalla, y $T_{apagar(pantalla)}= \frac{355[m]}{Veloc} \cdot 1000$, que es cuando el ciclista terminó de pasar por el monitor. El `relay` se enciende por 200 ms.
 
 ```plantuml
 @startuml
@@ -307,38 +305,50 @@ skinparam defaultTextAlignment center
 :=PANT_CTRL;
 :PIEH.0 ← 0
 PIEH.3 ← 0]
-if( 10 < VELOC < 50) then 
-  if(BIN1 == $AA) then 
-    if(PANT_FLAG == 0) then 
-      :(CALC_TICKS) ← 0\n(VELOC) ← 0\n(LONG) ← 0]
-    else (NO)
-    endif
-    :=RETORNAR;
-    detach
-  else (NO)
-    :(BIN1) ← $AA\n(BIN2) ← $AA\n(TICK_EN) ← 0\n(TICK_DIS) ← 2000\nPANT_FLAG ← 0]
-    :J ← MSGMSA_U\n:K ← MSGMSA_U]
-    :Cargar_LCD|
-  endif
-else (NO)
-  if(CALC_TICKS == 0) then
-    :(TICK_EN) ← 250-(LONG)/2\n(TICK_EN) ← (TICK_EN)/(VELOC)*1000\n(TICK_DIS) ← 250/(VELOC)*1000]  
-    :CALC_TICKS ← 1]  
-  else (NO)
-    if(PANT_FLAG == 1) then
-      if(BIN1 == $BB) then
-        :(CALC_TICKS) ← 0\n(VELOC) ← 0\n(LONG) ← 0]
+if( 10 < Veloc < 50) then
+  partition v_range {
+    if(BIN1 == $AA) then 
+      if(PANT_FLAG == 0) then
+        (1) 
+        detach 
       else (NO)
       endif
     else (NO)
-      if(BIN1 != $BB) then
-        :(BIN1) ← (LONG)\n(BIN2) ← (VELOC)\n(LONG) ← 0]
-        if(LONG < LengthOK) then
-          :J ← MSGMSNV_U\n:K ← MSGMSNV_U]
-        else (NO)
-          :J ← MSGMSV_U\n:K ← MSGMSV_U\nPORTE.2 ← 1\n(CONT_ROC) ← 200]
-        endif
+      partition error {  
+        :(BIN1) ← $AA\n(BIN2) ← $AA\n(TICK_EN) ← 0\n(TICK_DIS) ← ?\nPANT_FLAG ← 1]
+        :J ← MSGMSA_U\nK ← MSGMSA_D]
         :Cargar_LCD|
+      }
+  endif
+  }
+else (NO)
+  if(CALC_TICKS == 0) then
+    partition process {
+      :CALC_TICKS ← 1]
+      :?]  
+    }  
+  else (NO)
+    if(PANT_FLAG == 1) then
+      partition init_l {
+        if(BIN1 == $BB) then
+          :J ← MSGMS3_U\nK ← MSGMS3_D]
+          :Cargar_LCD|
+          :BIN1 ← (Vueltas)\nBIN2 ← (Veloc)]
+        else (NO)
+        endif
+      }
+    else (NO)
+      if(BIN1 != $BB) then
+        (1)
+        partition reset {
+          :J ← MSGRM\n:K ← MSGMS1_D]
+          :Cargar_LCD|
+          :(BIN1) ← $BB\n(BIN2) ← $BB]
+          if((Vueltas) == (NumVueltas)) then
+          else (NO)
+            :(CALC_TICKS) ← 1\n(Veloc) ← 0]
+          endif
+        }
       endif
     endif
   endif
@@ -358,7 +368,7 @@ scale max 100 height
 skinparam monochrome true
 skinparam defaultTextAlignment center
 :=BCD_BIN;
-:(Valor_Length) ← (Num_Array) x 10 + (Num_array + 1)]
+:(NumVueltas) ← (Num_Array) x 10 + (Num_array + 1)]
 
 :=RETORNAR;
 
