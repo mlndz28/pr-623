@@ -9,27 +9,45 @@
 	org $3000
 	bset DDRB,$FF		; configure port B for output
 	bset DDRJ,$02		; configure PJ1 pin for output
-	bclr PTJ,$02		; enable leds to light
+	bclr PTJ,$02		; enable			
+	
+	
 	bset DDRP,$0F		; set off 7 seg display
 	bset TSCR1,$90		; enable the timer module
-	bset TSCR2,$07		; set prescaler to 2^7
+	bset TSCR2,$03		; set prescaler to 2^3
 	bset TIOS,$10		; enable interruptions for channel 4
 	bset TIE,$10 
-	lds #STACK
+
 	cli
 	
+	bset ATD0CTL2,$C2	; enable ATD interruptions with automatic flag clearing		
+	movb D5mS,Cont_Delay
+	jsr DELAY
+	movb D5mS,Cont_Delay
+	jsr DELAY
+	movb #$28,ATD0CTL3	; 5 conversion cycles
+	movb #$97,ATD0CTL4	; 8 bit resolution, 2 clock cycles per  leds to light
+
+
+	lds #STACK
+	movb #$B9,BIN1
+	movb #$BB,BIN2
+	movb #99,BRILLO
+	clr LEDS
+	
 TEST_L1:				; the leds change every second 
-	ldab #13			; (a little bit longer than that, actually)
-TEST_L2:				; 13 * 2^7 * 20 * (24x10^6 / 8) * 255 [s]
+	;ldd #$13			; (a little bit longer than that, actually)
+	ldd #$83			; (a little bit longer than that, actually)
+TEST_L2:				; 13 * 255 *2^3 * 20 / (24x10^6 ) [s]
 	movb #$FF,Cont_Delay
 	jsr DELAY
-	tstb
-	dbne B,TEST_L2 
-	ldaa LEDS
-	adda #1
-	staa LEDS
-	staa PORTB
+	cpd #0 
+	dbne D,TEST_L2
+	inc LEDS
+	;movb #$FF,LEDS
+	;movb LEDS,PORTB
 	bra TEST_L1
+
 
 ;test
 ;from dbug12 import Debugger
