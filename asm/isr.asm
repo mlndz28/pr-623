@@ -7,8 +7,8 @@
 ;******************************************************************
 ;* RTI_ISR - real time interrupt service routine. Called every
 ;* 1 ms or so. Used to handle time counters that don't need  
-;* extreme accuracy.
-;*
+;* extreme accuracy. Controls the key-bounce suppressor timer and 
+;* the ADC  enabling.
 ;* Enabling convention:
 ;*   org UserRTI
 ;*   dw #RTI_ISR
@@ -21,9 +21,7 @@
 RTI_ISR:
 			brclr Cont_Reb,$FF,skip_reb`
 			dec Cont_Reb
-skip_reb`:	brclr CONT_ROC,$FF,skip_roc`
-			dec CONT_ROC
-skip_roc`:	brclr CONT_200,$FF,start_atd`
+skip_reb`:	brclr CONT_200,$FF,start_atd`
 			dec CONT_200
 			bra return`
 start_atd`:	movb #$87,ATD0CTL5	; right justified result,unsigned, single-channel scan (channel 7)
@@ -36,12 +34,11 @@ return`:	bset CRGFLG,$80
 ;******************************************************************
 ;* CALCULAR - port H interrupt service routine for inputs 0 and 3.  
 ;* pth0 calculates the speed of the pipe, given that: 
-;*   VELOC[cm/s] = 50000[10^-5 m]/TICK_MED[10^-3 s]   
-;* while pth3 reset the TICK_MED counter when on, and calculates
+;*   Veloc[cm/s] = 55000[10^-3 m]/TICK_MED[10^3 s]   
+;* while pth3 resets the TICK_MED counter when on, and calculates
 ;* the length when off:
-;*   LENGTH[cm] = VELOC[cm/s] * (TICK_MED/1000)[s]   
-;* Keyboard bounces are removed by using a 10 ms timer, and wrong
-;* key orders with a state machine, using POSITION as a state.
+;* Key order ara handled with a state machine, using CHECKPOINT as
+;*  a state.
 ;* Enabling convention:
 ;*   org UserPortH
 ;*   dw #CALCULAR
@@ -49,51 +46,46 @@ return`:	bset CRGFLG,$80
 ;*   bclr PPSH,$09
 ;*   cli
 ;*
-;* Changes: VELOC, TICK_MED, LONG, PIFH, POSITION, Banderas, PPSH.
+;* Changes: Veloc, TICK_MED, LONG, PIFH, CHECKPOINT, Banderas, PPSH.
 ;******************************************************************
 CALCULAR:	
-			brclr Cont_Reb,$FF,skip`	; if(Cont_Reb!=0x00) {return;}
-			rti
-skip`:		ldaa PIFH
-			brclr POSITION,$FF,s1`
-			brset POSITION,$01,s1_2`
-			brset POSITION,$02,s2`
-			bra reset`
-s1`:		cmpa #$08
-			beq pth3_on`
-			bra reset`
-s1_2`:		cmpa #$01
-			beq pth0`
-			bra reset`
-s2`:		cmpa #$08
-			beq pth3_off`
-			bra reset`
-pressed`:	movb #100,Cont_Reb
+			brset PIFH,$08,s1`
+			brset PIFH,$01,s2`
 			bra return`
-pth0`:		ldx TICK_MED
-			ldd #50000
-			bset PPSH,$08
-			bclr PIFH,$10
+s1`:		brset CHECKPOINT,$01,return`
+			movb #$01,CHECKPOINT
+			movw #0,TICK_MED
+			inc Vueltas
+			bra return`
+s2`:		brset CHECKPOINT,$02,return`
+			movb #$02,CHECKPOINT
+			;TICK_MED increases every 1ms
+			;Distance is 55m
+			;speed is 55 * 1000 / ticks [m/s]
+			;to km/h -> speed * 36 / 10
+			ldd #55*1000
+			ldx TICK_MED
 			idiv
 			exg D,X
-			stab VELOC
-			inc POSITION
-			bra pressed`
-pth3_on`:	movw #0,TICK_MED
-			bset Banderas,$01
-			bclr PIFH,$80
-			inc POSITION
-			bra pressed`
-pth3_off`:	ldx TICK_MED
-			ldd #1000
-			idiv
-			ldaa VELOC
-			mul 
-			stab LONG
-reset`:		bclr PIFH,$90
-			clr POSITION
+			ldy #36
+			emul
+			ldx #10
+			idiv	; X = v[km/h]
+			exg X,D
+			stab Veloc
+			bra return`
+return`:	
+			bclr PIFH,$90
 			bclr PPSH,$08
-return`:	rti
+			rti
+
+
+OC3_ISR:
+			dec Cont_Delay
+			ldd TCNT
+			addd #20*24/8			; 20us*24MHz/PRS
+			std TC3
+			rti
 
 
 	loc
@@ -115,31 +107,25 @@ return`:	rti
 ;*   DISP[1-4]: 7 segment display state
 ;*   LEDS: LED array state
 ;* Calls: CONV_BIN_BCD, BCD_7SEG
-;* Changes: CONT_TICKS, CONT_DIG, PORTB, DDRP, PTP, TC4
+;* Changes: CONT_TICKS, CONT_DIG, PORTB, DDRP, PTP, PTJ, TC4
 ;******************************************************************
 OC4_ISR:
 			ldaa CONT_7SEG
 			cmpa #10
 			bne skip_7s`
-			jsr CONV_BIN_BCD	
+			jsr CONV_BIN_BCD
 			jsr BCD_7SEG	
 			clr CONT_7SEG
 skip_7s`:	ldaa CONT_TICKS
 			cmpa #100
 			bne skip_d`				; if(CONT_TICKS == 100){
 			clr CONT_TICKS			;   CONT_TICKS = 0
-			lsl CONT_DIG			;   CONT_DIG++ 
+			rol CONT_DIG			;   CONT_DIG++ 
 			inc CONT_7SEG			;	CONT_7SEG
 			bra skip_t`				; }
-skip_d`:	inc CONT_TICKS			; CONT_TICKS++
-skip_t`:	tst Cont_Delay
-			beq skip_del`
-			dec Cont_Delay
-skip_del`:	cmpa BRILLO
-			beq set_off`
-			cmpa #0
-			beq set_on`
-			bra return`
+skip_d`:	inc CONT_TICKS			; CONT_TICKS++			
+skip_t`:	cmpa BRILLO
+			blo set_on`
 set_off`:	bset PTJ,$02			; disable leds
 			bset PTP,$0F			; disable 7seg
 			bset DDRP,$0F			; disable 7seg
@@ -148,8 +134,10 @@ set_on`:	brset CONT_DIG,$01,set_seg0
 			brset CONT_DIG,$02,set_seg1
 			brset CONT_DIG,$04,set_seg2
 			brset CONT_DIG,$08,set_seg3
-			bra set_leds`
-set_seg0:	movb DISP1,PORTB
+			brset CONT_DIG,$10,set_leds`
+			bra reset`
+set_seg0:	bset PTJ,$02
+			movb DISP1,PORTB
 			bra mux_p
 set_seg1:	movb DISP2,PORTB
 			bra mux_p
@@ -160,11 +148,9 @@ mux_p:		ldaa CONT_DIG
 			coma
 			staa PTP				; enable 7seg separately
 			bra return`
-set_leds`:	ldaa LEDS
-			movb LEDS,PORTB
+reset`:		movb #1,CONT_DIG		; reset counters
+set_leds`:	movb LEDS,PORTB
 			bclr PTJ,$02			; enable leds to light
-			movb #1,CONT_DIG		; reset counters
-			clr CONT_TICKS
 return`:	ldd TCNT
 			addd #20*24/8			; 20us*24MHz/PRS
 			std TC4
@@ -192,10 +178,7 @@ return`:	ldd TCNT
 ;* Changes: TICK_MED, TICK_EN, TICK_DES, BANDERAS[3], PTP, TC5
 ;******************************************************************
 TCNT_ISR:
-			tst CONT_ROC
-			bne return`
-			bclr PORTE,$04			; deactivate spray
-	
+				
 			ldx TICK_MED
 			inx
 			stx TICK_MED
@@ -203,15 +186,14 @@ TCNT_ISR:
 			beq enable`
 			dex
 			stx TICK_EN
-			bra skip_e`
-enable`:	bset BANDERAS+1,$08		; PANT_FLAG = 1
-skip_e`:	ldx TICK_DIS
+			bra skip_en`
+enable`:	bset Banderas,$08		; PANT_FLAG = 1
+skip_en`:	ldx TICK_DIS
 			beq disable`
 			dex
 			stx TICK_DIS
 			bra return`
-disable`:	bclr BANDERAS+1,$08		; PANT_FLAG = 0
-			
+disable`:	bclr Banderas,$08
 return`:	ldd TCNT
 			addd #1000*24/8			; 1000us*24MHz/PRS
 			std TC5
