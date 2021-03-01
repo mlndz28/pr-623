@@ -1,18 +1,30 @@
 ;********************************************************************************************
-;* Title: speedometer.asm 
+;* Proyecto Final: Runmeter 623
 ;********************************************************************************************
-;* Author: Fabian Melendez
-;*
-;* Description: Speedometer using sensors and a microcontroller.
-;*
+;* Author: Fabian Melendez ^ Leonel Sanchez
+;* 
 ;* Include Files: registers.inc
 ;*
 ;* Assembler: Karl Lunt - as12 (v1.2h, Linux port taken from 
 ;* https://github.com/mlndz28/68hc12-linux)
 ;*
+;* Descripcion General: El codigo a continuación es un programa para la tarjeta Dragon 12
+;* disenado para simular en el dispositivo un sistema para desplegar informacion de un 
+;* velodromo. El velodromo a simular cuenta con una pantalla de 7 segmentos de 4 digitos
+;* una pantalla LCD y 2 sensores foto reflectivos (simulados con botones de la tarjeta).
+;* El sistema cuenta con 4 modos.
+;* MODO CONFIG: en este se puede configurar la cantidad de vueltas a procesar
+;* MODO LIBRE: permite tener el sistema en modo ocioso
+;* MODO COMPETENCIA: se miden la cantidad de vueltas hechas por el ciclista, y se despliega
+;* la informacion de vueltas y velocidad para que este las pueda visualizar.
+;* MODO RESUMEN: muestra al ciclista un resumen de su rendimiento al calcular la velocidad
+;* promedio en las vueltas realizadas.
+;*
 ********************************************************************************************
 
-
+********************************************************************************************
+;* Data Structures
+********************************************************************************************
 				org $1000
 Banderas:		ds 1		; X:X:CALC_TICKS:X:PANT_FLAG:ARRAY_OK:TCL_LEIDA:TCL_LISTA
 	; * Modo config *

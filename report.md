@@ -1,14 +1,21 @@
 
-[comment]: <> (#!/usr/bin/pandoc --filter pandoc-plant-uml)
+[comment]: <> "#!/usr/bin/pandoc --filter pandoc-plant-uml"
 
-<h2 style="text-align: right"> Fabián Meléndez Aguilar </h2>
-<h2 style="text-align: right" > B34144 </h2> 
+<h2 style="text-align: right"> Fabián Meléndez Aguilar & Leonel Sánchez Lizano </h2>
+<h2 style="text-align: right" > B34144 & B26213</h2> 
 
-Proyecto Final
+***Proyecto Final IE0623: RunMeter 623***
 ====
 
-Se desea diseñar e implementar un sistema para el despliegue de información en un
-velódromo. El sistema, denominado RunMeter 623, cuenta con dos sensores foto reflectivos de presencia, una pantalla de 4 dígitos de 7 segmentos y una pantalla LCD 2 x16, como se muestra en la Figura #1. En esta figura se puede observar que el sistema dispone de dos sensores fotoreflectivos de presencia para detectar las bicicletas, separados 55 metros entre sí y de una pantalla, localizada a 300 metros del sensor S2, para presentar la velocidad de la bicicleta calculada en Km/h y el número de vueltas recorridas.
+# Resumen
+
+El proyecto a consiste en un programa para la tarjeta Dragon 12 diseñado para simular en el dispositivo un sistema para desplegar información de un  velódromo. El velódromo a simular cuenta con una pantalla de 7 segmentos de 4 dígitos una pantalla LCD y 2 sensores foto reflectivos (simulados con botones de la tarjeta). El sistema cuenta con 4 modos.
+
+- MODO CONFIG: en este se puede configurar la cantidad de vueltas a procesar
+- MODO LIBRE: permite tener el sistema en modo ocioso
+- MODO COMPETENCIA: se miden la cantidad de vueltas hechas por el ciclista, y se despliega la informacion de vueltas y velocidad para que este las pueda visualizar.
+- MODO RESUMEN: muestra al ciclista un resumen de su rendimiento al calcular la velocidad promedio en las vueltas realizadas 
+
 Se logran satisfacer los requerimientos del programa, que en resumen son:
   * Cambio de modos de operación
   * Ingreso de parámetros de configuración por medio del teclado matricial
@@ -18,6 +25,8 @@ Se logran satisfacer los requerimientos del programa, que en resumen son:
   * Cálculo de características físicas a partir de dichas temporizaciones
 
 Se realizaron varios `unit tests` y `integration tests` haciendo uso del API en python para D-Bug12 ([https://github.com/mlndz28/d-bug12](https://github.com/mlndz28/d-bug12)).
+
+# Diseño de la Aplicación
 
 
 ## Estructuras de datos
@@ -377,7 +386,7 @@ skinparam defaultTextAlignment center
 
 ## RTI_ISR
 
-Subrutina de interrupción para `RTI`. Se decrementan varios contadores. Cada 200ms se activa la interrupción de conversión analógica a digital.
+Subrutina de interrupción para `RTI`. Se decrementan varios contadores. Cada 200ms se activa la interrupción de conversión analógica a digital. Maneja contadores que no necesitan gran precisión y controla el *key-bounce suppressor timer* 
 
 ```plantuml
 @startuml
@@ -597,7 +606,7 @@ endwhile
 
 ## DELAY
 
-Espera a que el contador `Cont_Delay` llega a cero para salir de la subrutina.
+Espera a que el contador `Cont_Delay` llega a cero para salir de la subrutina. Cont_Delay se decrementa por una interrupción de timer cada 20 us.
 
 ```plantuml
 @startuml

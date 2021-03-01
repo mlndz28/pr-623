@@ -2,6 +2,15 @@
 ;* User interrupt service routines
 ;******************************************************************
 
+;******************************************************************
+;* TAREA_TECLADO - Supresses key's bounce and implements key 
+;* readings on negative edges.
+;* Bounce counter is now changed to 100 ms for a better debouncing
+;* effect.
+;*
+;* Calls: MUX_TECLADO, FORMAR ARRAY
+;******************************************************************
+
 TAREA_TECLADO:
 			brclr Cont_Reb,$FF,TT_MT	; if(Cont_Reb!=0x00) {return;}
 			rts
@@ -28,6 +37,14 @@ PUSHED:		ldaa Tecla_IN				;
 			rts							; }else{							(3)
 PSHRDY:		bset Banderas, $01			;   TCL_LISTA = true;
 			rts							; } return;
+
+
+;******************************************************************
+;* MUX_TECLADO - Reads keypad values through port A and assigns them
+;* a value on 'Teclas'
+;*
+;******************************************************************
+
 
 MUX_TECLADO:								; void mux_teclado(){
 			ldaa #$EF						;   for(i1=1; i1 < 5; i1++){
@@ -60,6 +77,14 @@ PRESSED:
 NOT_PRESSED:movb #$FF, Tecla		; Tecla = 0xFF	// not pressed
 			ins						; set back up the stack pointer
 			rts
+
+
+;******************************************************************
+;* FORMAR_ARRAY - Stores values recieved by keyboard input in an array
+;* and implements the 'B' (Borrar) and 'E' (Enter) keys.
+;*
+;* Calls: MUX_TECLADO, FORMAR ARRAY
+;******************************************************************
 
 FORMAR_ARRAY:
 			ldab Tecla_IN
