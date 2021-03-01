@@ -14,10 +14,12 @@ MODO_COMPETENCIA:
 			movb #$04,POSITION	
 			movb #$04,LEDS
 			movb #$BB,BIN1
-			movb #$BB,BIN2	
+			movb #$BB,BIN2
 			ldx #MSGRM
+			ldy #MSGMS2_D
+			brset CHECKPOINT,$01,scr_cal`
 			ldy #MSGMS1_D
-			jsr Cargar_LCD
+scr_cal`:	jsr Cargar_LCD
 skip_load`:	tst Veloc
 			beq return`
 ctrl`:		jsr PANT_CTRL
@@ -43,7 +45,7 @@ PANT_CTRL:
 			ldaa Veloc
 			cmpa #35
 			blo v_range`
-			cmpa #50
+			cmpa #95
 			bhi v_range`
 
 			brclr Banderas,$20,process` ; CALC_TICKS
@@ -58,7 +60,7 @@ process`:
 			clra
 ;			todo: calc TICK_DIS and TICK_EN
 			bset BANDERAS,$20		; CALC_TICKS = true
-			bra return`
+			lbra return`
 
 
 reset`:		ldx #MSGRM
@@ -92,6 +94,7 @@ error`:		movb #$AA,BIN1
 			movb #$AA,BIN2			
 			movw #0,TICK_EN
 			movw #3000,TICK_DIS
+			dec Vueltas
 			bset Banderas,$08
 			ldx #MSGMSA_U
 			ldy #MSGMSA_D

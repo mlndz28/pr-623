@@ -34,45 +34,48 @@ Antes de iniciar se segmentaron los 4 modos del Runmeter 623, según el lo que c
 
 ### Modo Libre
 
-- No realiza ningún cálculo
-- Despliega mensaje de modo libre
-- 7-seg display apagado
-- Interrupciones deshabilitadas después de desplegar el mensaje
+- [X] No realiza ningún cálculo
+- [X] Despliega mensaje de modo libre
+- [X] 7-seg display apagado
+- [X] Interrupciones deshabilitadas después de desplegar el mensaje
 
 ### Modo Configuración
 
-- 3 < número de vueltas < 23
-- Se pueden realizar cambios al número de vueltas
-- El número de vueltas sale siempre en la pantalla
-- Disp1 y Disp2 apagados
+- [X] 3 < número de vueltas < 23
+- [X] Se pueden realizar cambios al número de vueltas
+- [X] El número de vueltas sale siempre en la pantalla
+- [X] Disp1 y Disp2 apagados
 
 ### Modo Competencia
 
-- Despliega mensaje de Runmeter esperando
-- 7seg display inicia apagado
-- Después de calcular la velocidad, se muestra la velocidad en la pantalla 100m antes ->  t_100 = 200m / Vel_prom 
+- [X] Despliega mensaje de Runmeter esperando
+- [X] 7seg display inicia apagado
+- [ ] Después de calcular la velocidad, se muestra la velocidad en la pantalla 100m antes ->  t_100 = 200m / Vel_prom 
 
-- Despliega la velocidad y número de vueltas en 7seg display
-- Se asume solo 1 ciclista: la lectura de los sensores tiene que estar inactiva desde que el ciclista pasa enfrente , hasta que se termina de desplegar la velocidad.
--  7seg display se tiene que apagar luego de que se termina de presentar la velocidad del ciclista y mientras se calcula su velocidad en la siguiente vuelta
-- Después de que el ciclista pasa la pantalla, mientras no se detecte nada en el sensor S1, se mantiene el mensaje Inicial
-- Cuando se detecta movimiento en el sensor S1, se despliega mensaje de Calculando
-- No se toma en cuenta ciclistas en sentido opuesto
-- Si la velocidad calculada se sale del rango la velocidad, el 7seg display se pone Mensaje de Alerta
-- Para velocidades fuera de rango no se incrementa el número de vueltas.
-- Se debe habilitar de nuevo después los sensores para seguir leyendo y hacer mas cálculos de nuevas vueltas
-- Después de calcular la cantidad definida de vueltas, se deshabilitan los sensores y no se hacen mas cálculos de velocidad
-- La última vuelta termina cuando se despliega el mensaje de competencia en el LCD, este mensaje debe ser cambiado por el Mensaje Inicial. El usuario tiene que cambiar de modo y volver a modo competencia para poder volver a iniciar mediciones
-- Se puede suspender el modo competencia en antes de detectar S1, o antes de que el acumulador de vueltas llegue a su máximo valor, o pasar a otro modo, y al aunque esto suceda se deben mantener guardados los datos hasta que se regrese al modo competencia
-- Cada vez que el RunMeter 623 pase de Modo Competencia a cualquier otro modo se debe suspender cualquier cálculo en curso
-- Además al ingresar a Modo Competencia se deben borrar todas las variables de cálculo que se utilizan en este modo.
+- [ ] Despliega la velocidad y número de vueltas en 7seg display
+- [X] Se asume solo 1 ciclista: la lectura de los sensores tiene que estar inactiva desde que el ciclista pasa enfrente , hasta que se termina de desplegar la velocidad.
+- [ ] 7seg display se tiene que apagar luego de que se termina de presentar la velocidad del ciclista y mientras se calcula su velocidad en la siguiente vuelta
+- [ ] Después de que el ciclista pasa la pantalla, mientras no se detecte nada en el sensor S1, se mantiene el mensaje Inicial
+- [X] Cuando se detecta movimiento en el sensor S1, se despliega mensaje de Calculando
+- [X] No se toma en cuenta ciclistas en sentido opuesto
+- [X] Si la velocidad calculada se sale del rango la velocidad, el 7seg display se pone Mensaje de Alerta
+- [X] Para velocidades fuera de rango no se incrementa el número de vueltas.
+- [X] Se debe habilitar de nuevo después los sensores para seguir leyendo y hacer mas cálculos de nuevas vueltas
+- [ ] Después de calcular la cantidad definida de vueltas, se deshabilitan los sensores y no se hacen mas cálculos de velocidad
+- [ ] La última vuelta termina cuando se despliega el mensaje de competencia en el LCD, este mensaje debe ser cambiado por el Mensaje Inicial. El usuario tiene que cambiar de modo y volver a modo competencia para poder volver a iniciar mediciones
+- [X] Se puede suspender el modo competencia en antes de detectar S1, o antes de que el acumulador de vueltas llegue a su máximo valor, o pasar a otro modo, y al aunque esto suceda se deben mantener guardados los datos hasta que se regrese al modo competencia
+- [ ] Cada vez que el RunMeter 623 pase de Modo Competencia a cualquier otro modo se debe suspender cualquier cálculo en curso
+- [ ] Además al ingresar a Modo Competencia se deben borrar todas las variables de cálculo que se utilizan en este modo.
 
 ### Modo Resumen
 
-- Despliega la velocidad promedio del ciclo de competencia
-- Con el fin de que la variable de velocidad promedio sea de 1 byte la velocidad promedio debe ser actualizada en cada vuelta utilizando el contador de vueltas y la velocidad calculada.
+- [ ] Despliega la velocidad promedio del ciclo de competencia
+- [ ] Con el fin de que la variable de velocidad promedio sea de 1 byte la velocidad promedio debe ser actualizada en cada vuelta utilizando el contador de vueltas y la velocidad calculada.
 
+### Inicialización
 
+- [X] Entra en modo configuración sin importar la posición de los switches
+- [X] No se puede salir del modo configuración hasta haber ingresado un valor válido
 
 ## Estructuras de datos
 

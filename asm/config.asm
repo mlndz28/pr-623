@@ -32,9 +32,9 @@ skip_load`:	bclr Banderas,$04 ; ARRAY_OK = 0
 			; swi
 			jsr BCD_BIN
 			ldaa ValorVueltas
-			cmpa #5
+			cmpa #3
 			blo return`
-			cmpa #25
+			cmpa #23
 			bhi return`
 			movb ValorVueltas,NumVueltas		
 			movb NumVueltas,BIN1

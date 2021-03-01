@@ -167,5 +167,5 @@ INIT:
 		clr CONT_200
 		clr Cont_Delay
 		clr POSITION
-		clr CHECKPOINT
+		movb #$02,CHECKPOINT
 		rts

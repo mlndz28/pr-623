@@ -53,6 +53,7 @@ CALCULAR:
 			brset PIFH,$01,s2`
 			bra return`
 s1`:		brset CHECKPOINT,$01,return`
+			bclr POSITION,$04
 			movb #$01,CHECKPOINT
 			movw #0,TICK_MED
 			inc Vueltas
