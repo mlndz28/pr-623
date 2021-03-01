@@ -35,58 +35,58 @@ MAX_TCL:		dc.b $02	; max number of elements in sequence
 Tecla:			ds 1		; temporal holder for key values
 Tecla_IN:		ds 1		; final value for a key press
 Cont_Reb:		ds 1		; delay counter to ignore mechanical bounces on buttons
-Cont_TCL:		ds 1
+Cont_TCL:		ds 1		; idx used to write in the keys pressed array
 Patron:			ds 1		; keypad column switcher
-Num_Array:		ds 2
+Num_Array:		ds 2		; array used to store the pressed keys
 	; * ATD_ISR *
-BRILLO:			ds 1
-POT:			ds 1
+BRILLO:			ds 1		; variable used to increase or decrease the LCD screen brightness
+POT:			ds 1		; potenciometer variable
 	; * PANT_CTRL *
-TICK_EN:		ds 2
-TICK_DIS:		ds 1
+TICK_EN:		ds 2		; defines time the diplay is on
+TICK_DIS:		ds 1		; defines time the display is off
 				;org $1010
 				ds 1
 	; * CALCULAR *
-Veloc:			ds 1
-Vueltas:		ds 1
-VelProm:		ds 1
+Veloc:			ds 1		; speed calculated (actual measurement)
+Vueltas:		ds 1		; amount of laps
+VelProm:		ds 1		; average speed calculates
 	; * TCNT_ISR *
-TICK_MED:		ds 2
+TICK_MED:		ds 2		; ticks used to calculate the speed
 	; * CONV_BIN_BCD *
-BIN1:			ds 1
-BIN2:			ds 1
-BCD1:			ds 1
-BCD2:			ds 1
+BIN1:			ds 1		; used for Valorvueltas, input for CONV_BIN_BCD 
+BIN2:			ds 1		; input for CONV_BIN_BCD
+BCD1:			ds 1		; used for ValorVueltas, output for BIN_BCD, input for BCD_7SEG
+BCD2:			ds 1		; output for BIN_BCD, input for BCD_7SEG
 	; * BIN_BCD *
-BCD_L:			ds 1
-BCD_H:			ds 1
-TEMP:			ds 1
-LOW:			ds 1
+BCD_L:			ds 1		; stores output of BIN_BCD, used for CONV_BIN_BCD
+BCD_H:			ds 1		; for conversion
+TEMP:			ds 1		; temporary variable for conversions
+LOW:			ds 1		; used for BIN_BCD algorithm
 	; * BCD_7SEG *
-DISP1:			ds 1
-DISP2:			ds 1
+DISP1:			ds 1		; value written on the 7 seg diplay
+DISP2:			ds 1		; BCD2 uses DISP1 and DISP2
 				;org $1020
-DISP3:			ds 1
-DISP4:			ds 1
+DISP3:			ds 1		; value written on the 7 seg display
+DISP4:			ds 1		; BCD1 uses DISP3 and DISP4
 	; * OC4_ISR *
-LEDS:			ds 1
-CONT_DIG:		ds 1
-CONT_TICKS:		ds 1
-DT:				ds 1
-CONT_7SEG:		ds 2
+LEDS:			ds 1		; current state of the LEDS
+CONT_DIG:		ds 1		; counts which digit of the 7 seg diplay should be enabled. Changes when CONT_TICKS reaches 100
+CONT_TICKS:		ds 1		; ticks counter
+DT:				ds 1		; work cycle DT = N-K
+CONT_7SEG:		ds 2		; ticks counter for OC4. For LED refreshing 
 	; * RTI_ISR *
-CONT_200:		ds 1
+CONT_200:		ds 1		; 200ms counter for RTI
 	; * LCD *
-Cont_Delay:		ds 1
-D2mS:			dc.b 100
-D260uS:			dc.b 13
-D60uS:			dc.b 3
-Clear_LCD:		dc.b $01
-ADD_L1:			dc.b $80
-ADD_L2:			dc.b $C0
+Cont_Delay:		ds 1		; it is loaded with D2ms, D260uS, or D60uS por temp delays
+D2mS:			dc.b 100	; 100 ticks @ 50kHz -> 2 ms
+D260uS:			dc.b 13		; 13 ticks @ 50kHz -> 260 us
+D60uS:			dc.b 3		; 3 ticks @ 50kHZ -> 60 us
+Clear_LCD:		dc.b $01	; clears LCD display
+ADD_L1:			dc.b $80	; start address for line 1
+ADD_L2:			dc.b $C0	; start address for line 2
 				;org $1030
 	; * Other *
-D5mS:			dc.b 250
+D5mS:			dc.b 250	; 250 ticks @ 50kHz -> 5ms
 POSITION:		ds 1
 CHECKPOINT:		ds 1
 				
