@@ -347,7 +347,7 @@ endif
 
 ## PANT_CTRL
 
-Se actualizan los mensajes en la pantalla según los cálculos obtenidos para la velocidad y la longitud del tubo.
+Modifica las pantallas para desplegar el mensaje indicado cuando se detecta el paso de una bicicleta. Dependiendo de si la velocidad de la bicicleta está dentro del rango permitido muestra diferentes mensajes. Cuando el valor es válido, se muestra la velocidad al ciclista 100m antes de llegar a la pantalla.
 
 La temporización de los mensajes en las pantallas, y del rociador se calculan de la siguiente manera.
 
@@ -362,7 +362,7 @@ skinparam defaultTextAlignment center
 :=PANT_CTRL;
 :PIEH.0 ← 0
 PIEH.3 ← 0]
-if( 10 < Veloc < 50) then
+if( 35 < Veloc < 95) then
   partition v_range {
     if(BIN1 == $AA) then 
       if(PANT_FLAG == 0) then
